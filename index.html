@@ -33,13 +33,13 @@
         }
 
         .input-container {
+            position: relative;
             margin-bottom: 30px;
         }
 
         input {
             padding: 10px;
             width: 250px;
-            margin-right: 10px;
             margin-bottom: 10px;
             border: 2px solid #ccc;
             border-radius: 8px;
@@ -88,7 +88,26 @@
             color: #4CAF50;
         }
 
-        /* Responsive Design */
+        .suggestions {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            width: 250px;
+            z-index: 1000;
+        }
+
+        .suggestions div {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .suggestions div:hover {
+            background-color: #f0f0f0;
+        }
+
         @media screen and (max-width: 600px) {
             .weather-container {
                 width: 80%;
@@ -115,7 +134,8 @@
     <div class="weather-container">
         <h1>Weather App</h1>
         <div class="input-container">
-            <input type="text" id="cityInput" placeholder="Enter a City Name" />
+            <input type="text" id="cityInput" placeholder="Enter a City Name" oninput="suggestCities()" />
+            <div id="suggestions" class="suggestions"></div>
             <button onclick="getWeather()">Get Weather</button>
         </div>
         <div class="weather-info" id="weatherInfo">
@@ -125,54 +145,55 @@
     </div>
 
     <script>
-        // JavaScript for fetching weather data
         async function getWeather() {
-            const city = document.getElementById('cityInput').value.trim();
-            const weatherInfoDiv = document.getElementById('weatherInfo');
-            const errorMessageDiv = document.getElementById('errorMessage');
-            
-            // Reset previous results
-            weatherInfoDiv.style.display = "none";
-            errorMessageDiv.textContent = "";
+    const city = document.getElementById('cityInput').value.trim();
+    const weatherInfoDiv = document.getElementById('weatherInfo');
+    const errorMessageDiv = document.getElementById('errorMessage');
+    
+    weatherInfoDiv.style.display = "none";
+    errorMessageDiv.textContent = "";
 
-            // Show loading message
-            weatherInfoDiv.innerHTML = "Loading...";
-            weatherInfoDiv.style.display = "block";
+    weatherInfoDiv.innerHTML = "Loading...";
+    weatherInfoDiv.style.display = "block";
 
-            if (!city) {
-                errorMessageDiv.textContent = "Please enter a city name!";
-                weatherInfoDiv.style.display = "none";
-                return;
-            }
+    if (!city) {
+        errorMessageDiv.textContent = "Please enter a city name!";
+        weatherInfoDiv.style.display = "none";
+        return;
+    }
 
-            try {
-                // Fetch weather data from wttr.in
-                const response = await fetch(`https://wttr.in/${city}?format=%C+%t+%w+%h`);
-                
-                if (!response.ok) {
-                    throw new Error("You are entering a invalid city name");
-                }
-
-                const weatherData = await response.text();
-                const weatherDetails = weatherData.split("  ");
-                const condition = weatherDetails[0];
-                const temperature = weatherDetails[1];
-                const wind = weatherDetails[2];
-                const humidity = weatherDetails[3];
-
-                // Display weather data
-                weatherInfoDiv.innerHTML = `
-                    <p><strong>Condition:</strong> ${condition}</p>
-                    <p><strong>Temperature:</strong> ${temperature}</p>
-                    <p><strong>Wind:</strong> ${wind}</p>
-                    <p><strong>Humidity:</strong> ${humidity}</p>
-                `;
-                weatherInfoDiv.style.display = "block";
-            } catch (error) {
-                errorMessageDiv.textContent = `Error: ${error.message}`;
-                weatherInfoDiv.style.display = "none";
-            }
+    try {
+        // Adjusted API format for better parsing
+        const response = await fetch(`https://wttr.in/${city}?format=%C,%t,%w,%h`);
+        if (!response.ok) {
+            throw new Error("Invalid city name");
         }
+
+        const weatherData = await response.text();
+        const weatherDetails = weatherData.split(",");
+
+        if (weatherDetails.length < 4) {
+            throw new Error("Incomplete weather data received");
+        }
+
+        const condition = weatherDetails[0].trim();
+        const temperature = weatherDetails[1].trim();
+        const wind = weatherDetails[2].trim();
+        const humidity = weatherDetails[3].trim();
+
+        weatherInfoDiv.innerHTML = `
+            <p><strong>Condition:</strong> ${condition}</p>
+            <p><strong>Temperature:</strong> ${temperature}</p>
+            <p><strong>Wind:</strong> ${wind}</p>
+            <p><strong>Humidity:</strong> ${humidity}</p>
+        `;
+        weatherInfoDiv.style.display = "block";
+    } catch (error) {
+        errorMessageDiv.textContent = `Error: ${error.message}`;
+        weatherInfoDiv.style.display = "none";
+    }
+}
+
     </script>
 
 </body>
