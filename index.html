@@ -6,7 +6,6 @@
     <meta name="description" content="Stay updated with real-time weather forecasts, temperature, humidity, and wind details. Explore an intuitive and user-friendly weather app for accurate local and global weather updates">
     <title>Real-Time Weather App | Accurate Local & Global Forecasts</title>
     <style>
-        /* CSS Styling */
         body {
             font-family: 'Arial', sans-serif;
             background: linear-gradient(to right, #6a11cb, #2575fc);
@@ -140,7 +139,6 @@
             <button onclick="getWeather()">Get Weather</button>
         </div>
         <div class="weather-info" id="weatherInfo">
-            <!-- Weather details will be shown here -->
         </div>
         <div class="error-message" id="errorMessage"></div>
     </div>
@@ -164,7 +162,6 @@
     }
 
     try {
-        // Adjusted API format for better parsing
         const response = await fetch(`https://wttr.in/${city}?format=%C,%t,%w,%h`);
         if (!response.ok) {
             throw new Error("Invalid city name");
