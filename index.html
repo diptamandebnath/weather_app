@@ -16,65 +16,105 @@ body {
     margin: 0; 
 }
 
-.weather-container {
-    text-align: center; 
-    padding: 40px 30px; 
-    background-color: rgba(255, 255, 255, 0.8); 
-    border-radius: 15px; box-shadow: 0 0 25px rgba(0, 0, 0, 0.2); 
-    width: 350px; 
-    box-sizing: border-box;
-}
-
-h1 { color: #6a11cb; }
-
-input {
-    padding: 10px;
-    width: 250px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
-
-button {
-    margin-top: 10px;
-    padding: 10px 20px;
-    background: #4CAF50;
+/* Glass UI */
+.weather-app {
+    width: 360px;
+    padding: 25px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(20px);
     color: white;
+    text-align: center;
+}
+
+/* Input */
+input {
+    width: 80%;
+    padding: 10px;
+    border-radius: 10px;
     border: none;
-    border-radius: 8px;
+    outline: none;
+    margin-bottom: 10px;
+}
+
+/* Button */
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background: #00c853;
+    color: white;
     cursor: pointer;
 }
 
-.weather-info {
-    margin-top: 20px;
-    display: none;
-    text-align: left;
+/* Main Weather */
+.main-temp {
+    font-size: 50px;
+    font-weight: bold;
 }
 
+.location {
+    font-size: 18px;
+    opacity: 0.8;
+}
+
+.description {
+    margin-top: 5px;
+}
+
+/* Grid */
+.details {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.box {
+    background: rgba(255,255,255,0.2);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+/* Error */
 .error {
-    color: red;
+    color: #ff5252;
+    margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="weather-container">
-    <h1>Weather App</h1>
+<div class="weather-app">
+    <h2>Weather</h2>
 
     <input type="text" id="city" placeholder="Enter city (e.g. Agartala)">
-    <button onclick="getWeather()">Get Weather</button>
+    <br>
+    <button onclick="getWeather()">Search</button>
 
-    <div id="weather" class="weather-info"></div>
+    <div id="weather"></div>
     <div id="error" class="error"></div>
 </div>
 
 <script>
+function getWeatherDescription(code) {
+    if (code === 0) return "Clear Sky ☀️";
+    if (code <= 2) return "Partly Cloudy ⛅";
+    if (code === 3) return "Cloudy ☁️";
+    if (code <= 48) return "Fog 🌫️";
+    if (code <= 67) return "Rain 🌧️";
+    if (code <= 77) return "Snow ❄️";
+    if (code <= 99) return "Thunderstorm ⛈️";
+    return "Unknown";
+}
+
 async function getWeather() {
     const city = document.getElementById("city").value.trim();
     const weatherDiv = document.getElementById("weather");
     const errorDiv = document.getElementById("error");
 
-    weatherDiv.style.display = "none";
+    weatherDiv.innerHTML = "";
     errorDiv.textContent = "";
 
     if (!city) {
@@ -83,36 +123,42 @@ async function getWeather() {
     }
 
     weatherDiv.innerHTML = "Loading...";
-    weatherDiv.style.display = "block";
 
     try {
-        // Step 1: Get coordinates from Open-Meteo geocoding
+        // Get coordinates
         const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
         const geoData = await geoRes.json();
 
-        if (!geoData.results || geoData.results.length === 0) {
-            throw new Error("City not found");
-        }
+        if (!geoData.results) throw new Error("City not found");
 
         const { latitude, longitude, name, country } = geoData.results[0];
 
-        // Step 2: Get weather using coordinates
+        // Get weather
         const weatherRes = await fetch(
             `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`
         );
 
-        const weatherData = await weatherRes.json();
-        const current = weatherData.current_weather;
+        const data = await weatherRes.json();
+        const w = data.current_weather;
+
+        const desc = getWeatherDescription(w.weathercode);
+
+        const time = new Date(w.time).toLocaleString();
 
         weatherDiv.innerHTML = `
-            <p><strong>Location:</strong> ${name}, ${country}</p>
-            <p><strong>Temperature:</strong> ${current.temperature} °C</p>
-            <p><strong>Wind Speed:</strong> ${current.windspeed} km/h</p>
-            <p><strong>Weather Code:</strong> ${current.weathercode}</p>
-        `;
+            <div class="location">${name}, ${country}</div>
+            <div class="main-temp">${w.temperature}°C</div>
+            <div class="description">${desc}</div>
 
+            <div class="details">
+                <div class="box">💨 Wind: ${w.windspeed} km/h</div>
+                <div class="box">🧭 Direction: ${w.winddirection}°</div>
+                <div class="box">⏱ Updated: ${time}</div>
+                <div class="box">🌡 Code: ${w.weathercode}</div>
+            </div>
+        `;
     } catch (err) {
-        weatherDiv.style.display = "none";
+        weatherDiv.innerHTML = "";
         errorDiv.textContent = "Error: " + err.message;
     }
 }
