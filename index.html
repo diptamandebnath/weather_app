@@ -89,24 +89,27 @@ async function getWeather() {
     weatherInfoDiv.style.display = "block";
 
     try {
-        const url = `https://api.allorigins.win/raw?url=https://wttr.in/${encodeURIComponent(city)}?format=j1`;
+        const apiKey = "bc299684466dfb590c96f3dbd5eff106"; // 🔑 put your key here
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
 
         const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch data");
-
         const data = await response.json();
-        const current = data.current_condition[0];
+
+        if (data.cod !== 200) {
+            throw new Error(data.message);
+        }
 
         weatherInfoDiv.innerHTML = `
-            <p><strong>Condition:</strong> ${current.weatherDesc[0].value}</p>
-            <p><strong>Temperature:</strong> ${current.temp_C} °C</p>
-            <p><strong>Wind:</strong> ${current.windspeedKmph} km/h</p>
-            <p><strong>Humidity:</strong> ${current.humidity}%</p>
+            <p><strong>City:</strong> ${data.name}</p>
+            <p><strong>Condition:</strong> ${data.weather[0].main}</p>
+            <p><strong>Temperature:</strong> ${data.main.temp} °C</p>
+            <p><strong>Humidity:</strong> ${data.main.humidity}%</p>
+            <p><strong>Wind:</strong> ${data.wind.speed} m/s</p>
         `;
 
     } catch (error) {
         weatherInfoDiv.style.display = "none";
-        errorMessageDiv.textContent = "Error: Unable to fetch weather data";
+        errorMessageDiv.textContent = "Error: " + error.message;
     }
 }
 </script>
