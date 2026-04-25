@@ -18,7 +18,7 @@ You can try the Weather App by entering a city name and clicking on the "Get Wea
 
 - **HTML5**: Markup language for creating the structure of the page.
 - **CSS3**: For styling the page and making it visually appealing.
-- **JavaScript**: To handle fetching weather data from an external API (`wttr.in`).
+- **JavaScript**: To handle fetching weather data from an external API (`Open Metro`).
 
 ## How to Use
 
