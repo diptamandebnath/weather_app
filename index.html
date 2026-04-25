@@ -1,62 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Real-time weather app">
-    <title>Weather App</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather App (No API Key)</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(to right, #6a11cb, #2575fc);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
 
-        .weather-container {
-            text-align: center;
-            padding: 40px;
-            background: rgba(255,255,255,0.9);
-            border-radius: 15px;
-            width: 350px;
-        }
+.weather-container {
+    text-align: center;
+    padding: 40px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 15px;
+    width: 350px;
+}
 
-        h1 {
-            color: #6a11cb;
-        }
+h1 { color: #6a11cb; }
 
-        input {
-            padding: 10px;
-            width: 250px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
+input {
+    padding: 10px;
+    width: 250px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
 
-        button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
+button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
 
-        .weather-info {
-            margin-top: 20px;
-            display: none;
-            text-align: left;
-        }
+.weather-info {
+    margin-top: 20px;
+    display: none;
+    text-align: left;
+}
 
-        .error-message {
-            color: red;
-            margin-top: 10px;
-        }
-    </style>
+.error {
+    color: red;
+}
+</style>
 </head>
 
 <body>
@@ -64,52 +60,59 @@
 <div class="weather-container">
     <h1>Weather App</h1>
 
-    <input type="text" id="cityInput" placeholder="Enter city name">
+    <input type="text" id="city" placeholder="Enter city (e.g. Agartala)">
     <button onclick="getWeather()">Get Weather</button>
 
-    <div id="weatherInfo" class="weather-info"></div>
-    <div id="errorMessage" class="error-message"></div>
+    <div id="weather" class="weather-info"></div>
+    <div id="error" class="error"></div>
 </div>
 
 <script>
 async function getWeather() {
-    const city = document.getElementById('cityInput').value.trim();
-    const weatherInfoDiv = document.getElementById('weatherInfo');
-    const errorMessageDiv = document.getElementById('errorMessage');
+    const city = document.getElementById("city").value.trim();
+    const weatherDiv = document.getElementById("weather");
+    const errorDiv = document.getElementById("error");
 
-    weatherInfoDiv.style.display = "none";
-    errorMessageDiv.textContent = "";
+    weatherDiv.style.display = "none";
+    errorDiv.textContent = "";
 
     if (!city) {
-        errorMessageDiv.textContent = "Please enter a city name!";
+        errorDiv.textContent = "Enter a city name";
         return;
     }
 
-    weatherInfoDiv.innerHTML = "Loading...";
-    weatherInfoDiv.style.display = "block";
+    weatherDiv.innerHTML = "Loading...";
+    weatherDiv.style.display = "block";
 
     try {
-        const apiKey = "b27f957242003c7611b3ba3e3eddf4d0"; // 🔑 put your key here
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+        // Step 1: Get coordinates from Open-Meteo geocoding
+        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
+        const geoData = await geoRes.json();
 
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.cod !== 200) {
-            throw new Error(data.message);
+        if (!geoData.results || geoData.results.length === 0) {
+            throw new Error("City not found");
         }
 
-        weatherInfoDiv.innerHTML = `
-            <p><strong>City:</strong> ${data.name}</p>
-            <p><strong>Condition:</strong> ${data.weather[0].main}</p>
-            <p><strong>Temperature:</strong> ${data.main.temp} °C</p>
-            <p><strong>Humidity:</strong> ${data.main.humidity}%</p>
-            <p><strong>Wind:</strong> ${data.wind.speed} m/s</p>
+        const { latitude, longitude, name, country } = geoData.results[0];
+
+        // Step 2: Get weather using coordinates
+        const weatherRes = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`
+        );
+
+        const weatherData = await weatherRes.json();
+        const current = weatherData.current_weather;
+
+        weatherDiv.innerHTML = `
+            <p><strong>Location:</strong> ${name}, ${country}</p>
+            <p><strong>Temperature:</strong> ${current.temperature} °C</p>
+            <p><strong>Wind Speed:</strong> ${current.windspeed} km/h</p>
+            <p><strong>Weather Code:</strong> ${current.weathercode}</p>
         `;
 
-    } catch (error) {
-        weatherInfoDiv.style.display = "none";
-        errorMessageDiv.textContent = "Error: " + error.message;
+    } catch (err) {
+        weatherDiv.style.display = "none";
+        errorDiv.textContent = "Error: " + err.message;
     }
 }
 </script>
